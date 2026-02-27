@@ -4,7 +4,7 @@ on:
   schedule:
     # Runs at 9:00 AM UTC on weekdays (arXiv posts Mon–Fri)
     # Adjust to your preferred timezone offset if needed
-    - cron: '0 9 * * 1-5'
+    - cron: '0 9 * * 1,4'
 
   # Allow manual trigger from the GitHub Actions UI
   workflow_dispatch:
