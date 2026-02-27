@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+*.html
+.DS_Store
+config/top_papers_cache.json

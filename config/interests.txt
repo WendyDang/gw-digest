@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────────────
+# GW Digest — Custom Interest Profile
+# ─────────────────────────────────────────────────────────────────
+# Edit this file to tune what Claude considers "relevant".
+# If this file is empty or deleted, the default profile is used.
+# ─────────────────────────────────────────────────────────────────
+
+1. Dark sirens / bright sirens / standard sirens:
+   - GW standard sirens for Hubble constant (H0) measurements
+   - Galaxy catalog methods, dark siren statistics
+   - EM counterpart follow-up, multi-messenger cosmology
+   - Binary neutron star / neutron star–black hole events with counterparts
+
+2. Gravitational wave parameter estimation:
+   - Bayesian inference, MCMC, nested sampling
+   - PE pipelines: LALInference, Bilby, RIFT, cogwheel, Jim
+   - Fisher matrix forecasts for future detectors
+   - Waveform systematics, NR surrogates, EOB models
+   - Source characterization: masses, spins, tidal deformability, sky localization
+
+3. Tests of General Relativity with GWs:
+   - Modified gravity theories tested with GW observations
+   - GW propagation speed constraints
+   - Polarization modes beyond GR (scalar, vector, breathing modes)
+   - Post-Newtonian / post-Minkowskian deviations from GR
+   - Black hole spectroscopy, ringdown analysis, no-hair theorem tests
+   - Parameterized tests of GR (IMRPhenomPv2, TIGER framework)
+
+4. Major LIGO/Virgo/KAGRA results:
+   - New GW event detections or catalog updates (GWTC-x)
+   - Instrumental noise characterization, calibration, data quality
+   - Search pipeline papers (matched filter, cWB, oLIB, PyGRB)
+   - Sensitivity improvements, O4/O5 projections
+
+5. Highly novel ideas targeting PRL-level impact:
+   - First-of-kind methods or observations in GW astronomy
+   - Unexpected or surprising astrophysical results
+   - Cross-cutting ideas connecting GW physics to other fields
+   - New detector concepts with clear near-term impact

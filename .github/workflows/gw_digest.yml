@@ -1,0 +1,65 @@
+name: GW Daily Digest
+
+on:
+  schedule:
+    # Runs at 9:00 AM UTC on weekdays (arXiv posts Mon–Fri)
+    # Adjust to your preferred timezone offset if needed
+    - cron: '0 9 * * 1-5'
+
+  # Allow manual trigger from the GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (save HTML, do not send email)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['true', 'false']
+      threshold:
+        description: 'Relevance threshold (1–10)'
+        required: false
+        default: '7'
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore paper cache
+        uses: actions/cache@v4
+        with:
+          path: config/top_papers_cache.json
+          key: top-papers-cache-${{ github.run_id }}
+          restore-keys: |
+            top-papers-cache-
+
+      - name: Run GW Digest
+        env:
+          ANTHROPIC_API_KEY:    ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_USER:           ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD:   ${{ secrets.GMAIL_APP_PASSWORD }}
+          YOUR_EMAIL:           ${{ secrets.YOUR_EMAIL }}
+          DRY_RUN:              ${{ github.event.inputs.dry_run || 'false' }}
+          RELEVANCE_THRESHOLD:  ${{ github.event.inputs.threshold || '7' }}
+        run: python gw_digest.py
+
+      - name: Upload dry-run preview (if dry run)
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: digest-preview
+          path: /tmp/gw_digest_preview.html
+          retention-days: 3
