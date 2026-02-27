@@ -155,7 +155,15 @@ def fetch_recent_papers():
     """Fetch papers submitted in the last 24–36 hours across target categories."""
     papers = []
     seen_ids = set()
-    cutoff = date.today() - timedelta(days=1)
+    # Look back further on Mondays (covers Thu–Mon) vs Thursdays (covers Mon–Thu)
+    weekday = date.today().weekday()  # 0=Mon, 3=Thu
+    if weekday == 0:   # Monday
+        lookback_days = 4  # back to Thursday
+    elif weekday == 3:  # Thursday
+        lookback_days = 3  # back to Monday
+    else:
+        lookback_days = 1  # fallback
+    cutoff = date.today() - timedelta(days=lookback_days)
 
     for cat in CATEGORIES:
         print(f"  Fetching category: {cat}")
