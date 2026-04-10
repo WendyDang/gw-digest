@@ -188,6 +188,25 @@ def fetch_recent_papers():
 # ─────────────────────────────────────────────
 # SCORING
 # ─────────────────────────────────────────────
+KEYWORD_FILTER = [
+    "gravitational wave", "gravitational-wave", "gw event", "ligo", "virgo", "kagra",
+    "standard siren", "dark siren", "bright siren", "binary neutron star", "neutron star merger",
+    "black hole merger", "compact binary", "binary black hole", "bbh", "bns", "nsbh",
+    "parameter estimation", "bayesian inference", "ringdown", "quasi-normal mode",
+    "hubble constant", "h0 measurement", "waveform model", "matched filter",
+    "post-newtonian", "effective-one-body", "eob model", "imr", "nr surrogate",
+    "gwtc", "o3 catalog", "o4", "einstein telescope", "cosmic explorer", "lisa",
+    "tests of gr", "modified gravity", "scalar-tensor", "lorentz violation",
+    "polarization mode", "extra polarization", "tidal deformability",
+    "neutron star equation of state", "kilonova", "multi-messenger",
+]
+
+def passes_keyword_filter(paper):
+    """Return True if the paper likely warrants Claude scoring."""
+    text = (paper.title + " " + paper.summary).lower()
+    return any(kw in text for kw in KEYWORD_FILTER)
+
+
 def score_paper(claude_client, paper):
     """Ask Claude to score paper relevance 1–10 and return structured JSON."""
     authors_str = ", ".join(a.name for a in paper.authors[:6])
@@ -229,7 +248,7 @@ Return ONLY a valid JSON object, no other text:
 
     try:
         response = claude_client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-haiku-4-5-20251001",
             max_tokens=250,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -455,7 +474,12 @@ def main():
     # 2. Score each paper
     print(f"\n[2/3] Scoring papers (threshold ≥ {RELEVANCE_THRESHOLD}/10)...")
     relevant = []
+    skipped = 0
     for i, paper in enumerate(papers, 1):
+        if not passes_keyword_filter(paper):
+            skipped += 1
+            print(f"  · [--/10] [filtered  ] {paper.title[:65]}...")
+            continue
         sleep(0.4)  # gentle rate limiting
         score_info = score_paper(claude_client, paper)
         score = score_info.get("score", 0)
@@ -469,7 +493,7 @@ def main():
 
     # Sort by score descending
     relevant.sort(key=lambda x: x[1].get("score", 0), reverse=True)
-    print(f"\n  → {len(relevant)} relevant papers found")
+    print(f"\n  → {len(relevant)} relevant papers found ({skipped} skipped by keyword filter)")
 
     # Save any 9–10 scorers to cache
     save_to_cache(relevant)
