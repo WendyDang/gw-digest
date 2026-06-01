@@ -17,7 +17,7 @@ from time import sleep
 # ─────────────────────────────────────────────
 # CONFIG (override via environment variables)
 # ─────────────────────────────────────────────
-CATEGORIES       = os.getenv("ARXIV_CATEGORIES", "gr-qc,astro-ph.CO,astro-ph.HE").split(",")
+CATEGORIES       = os.getenv("ARXIV_CATEGORIES", "gr-qc,astro-ph.CO,astro-ph.HE,astro-ph.IM").split(",")
 RELEVANCE_THRESHOLD = int(os.getenv("RELEVANCE_THRESHOLD", "7"))
 MAX_PAPERS       = int(os.getenv("MAX_PAPERS", "100"))
 YOUR_EMAIL       = os.getenv("YOUR_EMAIL", "you@example.com")
@@ -155,14 +155,17 @@ def fetch_recent_papers():
     """Fetch papers submitted in the last 24–36 hours across target categories."""
     papers = []
     seen_ids = set()
-    # Look back further on Mondays (covers Thu–Mon) vs Thursdays (covers Mon–Thu)
-    weekday = date.today().weekday()  # 0=Mon, 3=Thu
-    if weekday == 0:   # Monday
-        lookback_days = 4  # back to Thursday
-    elif weekday == 3:  # Thursday
-        lookback_days = 3  # back to Monday
-    else:
-        lookback_days = 1  # fallback
+    # Digest runs Mon (0) and Wed (2).
+    # Monday: look back to Thursday (4 days, covers Thu/Fri/Sat/Sun).
+    # Wednesday: look back to Monday (2 days, covers Mon/Tue).
+    # Any other day (manual trigger): look back 2 days as a safe default.
+    weekday = date.today().weekday()  # 0=Mon ... 6=Sun
+    if weekday == 0:    # Monday
+        lookback_days = 4
+    elif weekday == 2:  # Wednesday
+        lookback_days = 2
+    else:               # manual trigger on any other day
+        lookback_days = 2
     cutoff = date.today() - timedelta(days=lookback_days)
 
     for cat in CATEGORIES:
@@ -189,16 +192,35 @@ def fetch_recent_papers():
 # SCORING
 # ─────────────────────────────────────────────
 KEYWORD_FILTER = [
+    # GW detectors and catalogs
     "gravitational wave", "gravitational-wave", "gw event", "ligo", "virgo", "kagra",
-    "standard siren", "dark siren", "bright siren", "binary neutron star", "neutron star merger",
-    "black hole merger", "compact binary", "binary black hole", "bbh", "bns", "nsbh",
-    "parameter estimation", "bayesian inference", "ringdown", "quasi-normal mode",
-    "hubble constant", "h0 measurement", "waveform model", "matched filter",
-    "post-newtonian", "effective-one-body", "eob model", "imr", "nr surrogate",
     "gwtc", "o3 catalog", "o4", "einstein telescope", "cosmic explorer", "lisa",
+    # Siren methods and H0
+    "standard siren", "dark siren", "bright siren", "multi-messenger",
+    "hubble constant", "hubble tension", "hubble flow", "h0 measurement",
+    " h0 ", "h_0", "$h_0",
+    # Cross-correlation and LSS approaches (previously missing)
+    "cross-correlation", "angular cross-correlation", "cross correlation",
+    "large-scale structure", "galaxy catalog", "galaxy catalogue",
+    "galaxy survey", "galaxy clustering", "angular power spectrum",
+    "harmonic framework", "spherical harmonic", "clustering",
+    "two-point", "power spectrum", "angular clustering",
+    # Completeness and selection effects (previously missing)
+    "completeness correction", "catalog incompleteness", "catalogue incompleteness",
+    "selection bias", "selection effect", "magnitude limit", "flux limit",
+    "malmquist", "schechter",
+    # Compact binaries and sources
+    "binary neutron star", "neutron star merger", "black hole merger",
+    "compact binary", "binary black hole", "bbh", "bns", "nsbh",
+    "kilonova",
+    # Parameter estimation and inference
+    "parameter estimation", "bayesian inference", "ringdown", "quasi-normal mode",
+    "waveform model", "matched filter",
+    "post-newtonian", "effective-one-body", "eob model", "imr", "nr surrogate",
+    # GR tests
     "tests of gr", "modified gravity", "scalar-tensor", "lorentz violation",
     "polarization mode", "extra polarization", "tidal deformability",
-    "neutron star equation of state", "kilonova", "multi-messenger",
+    "neutron star equation of state",
 ]
 
 def passes_keyword_filter(paper):
@@ -219,16 +241,29 @@ Score this paper's relevance (1–10) to these SPECIFIC research interests:
 {INTEREST_PROFILE}
 
 STRICT scoring rules — be conservative, most papers should score low:
-- 9–10: DIRECTLY on one of the core topics above. Must be about dark/bright/standard sirens, 
-        GW parameter estimation methods, tests of GR with GWs, or a major LIGO/Virgo/KAGRA result.
+- 9–10: DIRECTLY on one of the core topics above. This includes:
+        (a) dark/bright/standard siren H0 measurements or forecasts,
+        (b) galaxy catalog methods for dark sirens — including cross-correlation approaches,
+            angular power spectrum / harmonic framework methods, completeness corrections,
+            selection bias modelling, or catalog incompleteness treatments,
+        (c) GW parameter estimation methods (Bayesian/MCMC/nested sampling, waveform systematics),
+        (d) tests of GR with GWs,
+        (e) major LIGO/Virgo/KAGRA detection or catalog results.
         Score 10 only for truly landmark results (new detection, major H0 measurement, etc.)
-- 7–8:  Clearly relevant and useful — touches the specific topics above, not just loosely related GW work
-- 5–6:  GW-adjacent but NOT on the specific topics (e.g. generic BH mergers, generic cosmology without sirens)
+- 7–8:  Clearly relevant and useful — touches the specific topics above, not just loosely
+        related GW work. E.g. LSS statistics directly applied to GW host localisation,
+        galaxy survey papers with explicit GW siren application, population inference
+        methods with cosmological implications.
+- 5–6:  GW-adjacent but NOT on the specific topics (e.g. generic BH mergers with no
+        cosmology angle, generic cosmology without sirens, pure EM galaxy surveys)
 - 3–4:  General relativity or astrophysics with minor GW connection
-- 1–2:  Not relevant at all (galaxy surveys, CMB without GW, pure EM astronomy, etc.)
+- 1–2:  Not relevant at all (pure CMB, pure EM astronomy unrelated to GW hosts, etc.)
 
-IMPORTANT: A paper about generic compact binaries, gravitational waveforms for unrelated purposes,
-or general cosmology WITHOUT the specific siren/PE/GR-test connection should score 5 or below.
+IMPORTANT: Cross-correlation of GW events with galaxy catalogs, angular power spectrum
+approaches to H0, large-scale structure methods for dark sirens, and completeness/selection
+corrections for galaxy catalogs used in GW cosmology are ALL core topics — score them 8–10.
+A paper about generic compact binaries or general cosmology WITHOUT the specific
+siren/PE/GR-test connection should score 5 or below.
 Be strict — only score 7+ if you would genuinely recommend a GW cosmologist read this paper.
 
 Paper details:
